@@ -1,71 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile } from "fs/promises";
 import path from "path";
 import fs from "fs";
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_KEY,
-  api_secret: process.env.CLOUDINARY_SECRET
-});
-
-export const maxDuration = 30; // 30 seconds timeout
+export const maxDuration = 60; // 60 seconds timeout
 
 export async function POST(req: NextRequest) {
   try {
     console.log("Upload API called");
     
     const formData = await req.formData();
-    const file = formData.get("file") as File;
+    const file = formData.get("file");
     
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    if (!file || !(file instanceof Blob)) {
+      return NextResponse.json({ error: "No valid file uploaded" }, { status: 400 });
     }
     
     console.log("File received:", file.name, file.type, file.size);
     
+    // Create a unique filename
+    const timestamp = Date.now();
+    const safeFilename = file.name?.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '') || 'image.jpg';
+    const filename = `${timestamp}-${safeFilename}`;
+    
     try {
-      // First save the file locally
+      // Get file data
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       
-      // Create a unique filename
-      const timestamp = Date.now();
-      const safeFilename = file.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '');
-      const filename = `${timestamp}-${safeFilename}`;
-      const uploadDir = path.join(process.cwd(), "public/images/uploads");
-      const filepath = path.join(uploadDir, filename);
+      // Define paths
+      const publicDir = path.join(process.cwd(), "public");
+      const uploadsDir = path.join(publicDir, "images", "uploads");
       
-      // Ensure upload directory exists
-      if (!fs.existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
+      // Create directories if they don't exist
+      if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
       }
       
-      // Save file to public directory
-      await writeFile(filepath, buffer);
-      console.log(`File saved locally at: ${filepath}`);
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
       
-      // Local URL
-      const localUrl = `/images/uploads/${filename}`;
+      // Save file
+      const filepath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filepath, buffer);
       
-      // Skip Cloudinary for now and use local file directly
+      console.log(`File saved at: ${filepath}`);
+      
+      // Return the URL
       return NextResponse.json({ 
-        message: "File uploaded successfully",
-        url: localUrl
+        success: true,
+        url: `/images/uploads/${filename}`
       });
-      
-    } catch (fileError: any) {
-      console.error("File processing error:", fileError);
+    } catch (error: any) {
+      console.error("File system error:", error);
       return NextResponse.json({ 
-        error: "Failed to process file: " + (fileError.message || "Unknown error")
+        error: "Server file system error" 
       }, { status: 500 });
     }
   } catch (error: any) {
     console.error("Upload error:", error);
     return NextResponse.json({ 
-      error: error.message || "Error uploading file" 
+      error: "Server error processing upload" 
     }, { status: 500 });
   }
 }

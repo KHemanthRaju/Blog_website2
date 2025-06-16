@@ -23,9 +23,9 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       return;
     }
 
-    // Check file size (limit to 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setError("File size exceeds 2MB limit");
+    // Check file size (limit to 1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      setError("File size exceeds 1MB limit");
       return;
     }
 
@@ -44,7 +44,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
 
       // Set timeout for fetch to prevent hanging requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -52,11 +52,19 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         signal: controller.signal,
       }).finally(() => clearTimeout(timeoutId));
 
+      const responseText = await response.text();
+      console.log("Server response:", responseText);
+      
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
 
-      const data = await response.json();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error("Invalid server response");
+      }
       
       if (!data.url) {
         throw new Error("No URL returned from server");
