@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Add server actions experimental flag
-  experimental: {
-    serverActions: true,
-  }
+  // Server Actions are now available by default in Next.js 14.0.3
 }
 
 module.exports = nextConfig

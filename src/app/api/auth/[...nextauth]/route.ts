@@ -3,6 +3,32 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongoose";
 import User from "@/lib/models/user";
+import { JWT } from "next-auth/jwt";
+
+// Extend the session and JWT types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role?: string;
+    }
+  }
+  
+  interface User {
+    id: string;
+    role?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role?: string;
+  }
+}
 
 const handler = NextAuth({
   providers: [

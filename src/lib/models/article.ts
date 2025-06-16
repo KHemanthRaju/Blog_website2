@@ -1,4 +1,20 @@
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
+
+// Define interface for Article document
+interface IArticle extends mongoose.Document {
+  title: string;
+  description: string;
+  content: string;
+  coverImage: string;
+  date: Date;
+  author: {
+    name: string;
+    image: string;
+  };
+  published: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // Define the Article schema
 const ArticleSchema = new mongoose.Schema({
@@ -43,14 +59,14 @@ const ArticleSchema = new mongoose.Schema({
 });
 
 // Use existing model or create a new one
-let Article;
+let Article: Model<IArticle>;
 
 try {
   // Try to get the existing model to prevent OverwriteModelError
-  Article = mongoose.model('Article');
+  Article = mongoose.model<IArticle>('Article');
 } catch (error) {
   // Model doesn't exist yet, so create it
-  Article = mongoose.model('Article', ArticleSchema);
+  Article = mongoose.model<IArticle>('Article', ArticleSchema);
 }
 
 export default Article;
