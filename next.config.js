@@ -9,14 +9,7 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-  },
-  // Increase API body size limit for image uploads
-  api: {
-    bodyParser: {
-      sizeLimit: '3mb',
-    },
-    responseLimit: false,
-  },
+  }
 }
 
 module.exports = nextConfig

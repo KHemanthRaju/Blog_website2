@@ -11,12 +11,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_SECRET
 });
 
-export const config = {
-  api: {
-    bodyParser: false,
-    responseLimit: false,
-  },
-};
+export const maxDuration = 30; // 30 seconds timeout
 
 export async function POST(req: NextRequest) {
   try {
