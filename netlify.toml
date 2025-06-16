@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PRIVATE_TARGET = "serverless"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  included_files = ["src/lib/models/**"]
+  node_bundler = "esbuild"
+  external_node_modules = ["mongoose"]
