@@ -13,10 +13,13 @@ interface FormData {
   published: boolean;
 }
 
+// Default placeholder that exists in the public folder
+const DEFAULT_PLACEHOLDER = "https://via.placeholder.com/800x400?text=Select+Cover+Image";
+
 export default function NewArticlePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [coverImage, setCoverImage] = useState("/images/placeholder.jpg");
+  const [coverImage, setCoverImage] = useState(DEFAULT_PLACEHOLDER);
   const [error, setError] = useState<string | null>(null);
   
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -24,7 +27,7 @@ export default function NewArticlePage() {
       title: "",
       description: "",
       content: "",
-      coverImage: "/images/placeholder.jpg",
+      coverImage: DEFAULT_PLACEHOLDER,
       published: false,
     },
   });
@@ -33,13 +36,20 @@ export default function NewArticlePage() {
     setIsSubmitting(true);
     setError(null);
     
+    // Validate cover image
+    if (coverImage === DEFAULT_PLACEHOLDER) {
+      setError("Please upload a cover image");
+      setIsSubmitting(false);
+      return;
+    }
+    
     try {
       const articleData = {
         ...data,
         coverImage: coverImage,
         author: {
           name: "Admin",
-          image: "/images/authors/default.jpg",
+          image: "https://via.placeholder.com/100x100?text=Admin",
         },
         date: new Date().toISOString(),
       };
