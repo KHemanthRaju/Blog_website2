@@ -6,7 +6,7 @@ A modern blog website built with Next.js, MongoDB, and shadcn/ui components. Fea
 
 - Responsive blog with horizontal card layout
 - Admin panel for article management
-- Image upload functionality
+- Image upload functionality with Cloudinary
 - Markdown support for article content
 - MongoDB integration for data storage
 - Authentication system for admin access
@@ -17,7 +17,8 @@ A modern blog website built with Next.js, MongoDB, and shadcn/ui components. Fea
 - **UI Components**: shadcn/ui
 - **Database**: MongoDB
 - **Authentication**: NextAuth.js
-- **Image Storage**: Local file system
+- **Image Storage**: Cloudinary
+- **Deployment**: Netlify
 
 ## Getting Started
 
@@ -25,6 +26,7 @@ A modern blog website built with Next.js, MongoDB, and shadcn/ui components. Fea
 
 - Node.js 16+ and npm
 - MongoDB (local or Atlas)
+- Cloudinary account (free tier)
 
 ### Installation
 
@@ -43,7 +45,7 @@ A modern blog website built with Next.js, MongoDB, and shadcn/ui components. Fea
    ```bash
    cp .env.example .env.local
    ```
-   Edit `.env.local` with your MongoDB connection string and NextAuth secret
+   Edit `.env.local` with your MongoDB connection string, NextAuth secret, and Cloudinary credentials
 
 4. Run the development server
    ```bash
@@ -60,6 +62,26 @@ A modern blog website built with Next.js, MongoDB, and shadcn/ui components. Fea
    Visit: http://localhost:3000/admin/login
    Login with: admin@example.com / password123
    ```
+
+## Deployment to Netlify
+
+1. Push your code to GitHub
+
+2. Connect your repository to Netlify
+
+3. Configure environment variables in Netlify dashboard:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - `NEXTAUTH_SECRET`: A secure random string for NextAuth
+   - `NEXTAUTH_URL`: Your Netlify site URL
+   - `CLOUDINARY_NAME`: Your Cloudinary cloud name
+   - `CLOUDINARY_KEY`: Your Cloudinary API key
+   - `CLOUDINARY_SECRET`: Your Cloudinary API secret
+
+4. Add the following build settings:
+   - Build command: `npm run build`
+   - Publish directory: `.next`
+
+5. Deploy your site
 
 ## API Reference
 
@@ -113,7 +135,7 @@ Request body:
   "title": "Article Title",
   "description": "Short description",
   "content": "Full article content with markdown support",
-  "coverImage": "/images/uploads/image.jpg",
+  "coverImage": "https://res.cloudinary.com/your-cloud-name/image/upload/v1234567890/blog/image.jpg",
   "published": true,
   "author": {
     "name": "Author Name",
@@ -145,7 +167,7 @@ Response:
 ```json
 {
   "message": "File uploaded successfully",
-  "url": "/images/uploads/filename.jpg"
+  "url": "https://res.cloudinary.com/your-cloud-name/image/upload/v1234567890/blog/image.jpg"
 }
 ```
 
@@ -163,35 +185,6 @@ Response:
 }
 ```
 
-### User Endpoints (Not Implemented Yet)
-
-These endpoints would be used for user management:
-
-#### Get All Users
-```
-GET /api/users
-```
-
-#### Get Single User
-```
-GET /api/users/{id}
-```
-
-#### Create User
-```
-POST /api/users
-```
-
-#### Update User
-```
-PUT /api/users/{id}
-```
-
-#### Delete User
-```
-DELETE /api/users/{id}
-```
-
 ## Frontend Routes
 
 ### Public Routes
@@ -205,28 +198,12 @@ DELETE /api/users/{id}
 - `/admin/articles/new` - Create new article
 - `/admin/articles/edit/{id}` - Edit existing article
 
-## Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Configure environment variables in Vercel dashboard
-4. Deploy
-
-### MongoDB Atlas
-
-1. Create a free MongoDB Atlas cluster
-2. Configure network access to allow connections from your deployment
-3. Update your MONGODB_URI environment variable
-
 ## Project Structure
 
 ```
 /
 ├── public/               # Static files
 │   └── images/           # Image assets
-│       └── uploads/      # Uploaded images
 ├── src/
 │   ├── app/              # Next.js App Router
 │   │   ├── admin/        # Admin panel pages
@@ -252,3 +229,5 @@ MIT
 - [shadcn/ui](https://ui.shadcn.com/)
 - [MongoDB](https://www.mongodb.com/)
 - [NextAuth.js](https://next-auth.js.org/)
+- [Cloudinary](https://cloudinary.com/)
+- [Netlify](https://www.netlify.com/)

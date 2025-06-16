@@ -70,7 +70,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         />
         {value && (
           <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-            {value.split("/").pop()}
+            {value.includes("/") ? value.split("/").pop() : value}
           </span>
         )}
       </div>
@@ -80,15 +80,11 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       {value && (
         <div className="relative h-48 w-full overflow-hidden rounded border">
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            {value.endsWith('.svg') || value.endsWith('.png') || value.endsWith('.jpg') || value.endsWith('.jpeg') ? (
-              <img
-                src={value}
-                alt="Uploaded image"
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <span className="text-muted-foreground">Image: {value}</span>
-            )}
+            <img
+              src={value}
+              alt="Uploaded image"
+              className="h-full w-full object-contain"
+            />
           </div>
         </div>
       )}

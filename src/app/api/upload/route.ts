@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
-// Temporarily disable auth check for testing
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET
+});
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -13,29 +17,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
     
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Create a unique filename
-    const filename = `${Date.now()}-${file.name.replace(/\s/g, "-")}`;
-    const uploadsDir = join(process.cwd(), "public", "images", "uploads");
-    const filePath = join(uploadsDir, filename);
+    // Upload to Cloudinary using stream
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "blog" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      
+      // Create a readable stream from buffer and pipe to uploadStream
+      const { Readable } = require("stream");
+      Readable.from(buffer).pipe(uploadStream);
+    });
     
-    // Ensure the uploads directory exists
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (err) {
-      console.log("Directory already exists or cannot be created");
-    }
-    
-    // Write the file
-    await writeFile(filePath, buffer);
-    
-    console.log(`File saved to ${filePath}`);
-    
+    // Return the Cloudinary URL
     return NextResponse.json({ 
       message: "File uploaded successfully",
-      url: `/images/uploads/${filename}`
+      url: (result as any).secure_url
     });
   } catch (error: any) {
     console.error("Upload error:", error);
