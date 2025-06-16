@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "./button";
-import Image from "next/image";
 
 interface ImageUploadProps {
   value: string;
@@ -24,9 +23,9 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       return;
     }
 
-    // Check file size (limit to 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File size exceeds 5MB limit");
+    // Check file size (limit to 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError("File size exceeds 2MB limit");
       return;
     }
 
@@ -45,7 +44,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
 
       // Set timeout for fetch to prevent hanging requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -54,14 +53,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       }).finally(() => clearTimeout(timeoutId));
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Upload response error:", response.status, errorText);
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.error || `Server error: ${response.status}`);
-        } catch (parseError) {
-          throw new Error(`Server error: ${response.status}`);
-        }
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -72,6 +64,9 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
 
       console.log("Upload successful, URL:", data.url);
       onChange(data.url);
+      
+      // Use the returned URL directly
+      URL.revokeObjectURL(localPreview); // Clean up the blob URL
       setPreviewUrl(data.url);
     } catch (err: any) {
       if (err.name === 'AbortError') {
@@ -80,11 +75,16 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         setError(err.message || "Error uploading image. Please try again.");
       }
       console.error("Upload error:", err);
-      // Revert to original value if there was one
-      setPreviewUrl(value || null);
+      // Keep the local preview but don't set it as the value
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // Function to render a fallback image if the main image fails to load
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error("Image failed to load:", previewUrl);
+    e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
   };
 
   return (
@@ -118,30 +118,12 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       {previewUrl && (
         <div className="relative h-48 w-full overflow-hidden rounded border">
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            {/* Use regular img tag for local object URLs and Next/Image for remote URLs */}
-            {previewUrl.startsWith('blob:') ? (
-              <img
-                src={previewUrl}
-                alt="Uploaded image"
-                className="h-full w-full object-contain"
-                onError={(e) => {
-                  console.error("Image failed to load:", previewUrl);
-                  setError("Failed to load image preview");
-                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
-                }}
-              />
-            ) : (
-              <img
-                src={previewUrl}
-                alt="Uploaded image"
-                className="h-full w-full object-contain"
-                onError={(e) => {
-                  console.error("Image failed to load:", previewUrl);
-                  setError("Failed to load image preview");
-                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E";
-                }}
-              />
-            )}
+            <img
+              src={previewUrl}
+              alt="Uploaded image"
+              className="h-full w-full object-contain"
+              onError={handleImageError}
+            />
           </div>
         </div>
       )}
