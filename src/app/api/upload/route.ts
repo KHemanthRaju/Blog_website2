@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
-import fs from "fs";
 
-export const maxDuration = 60; // 60 seconds timeout
-
+// For serverless environments, we'll use a data URL approach
 export async function POST(req: NextRequest) {
   try {
     console.log("Upload API called");
@@ -18,44 +14,27 @@ export async function POST(req: NextRequest) {
     
     console.log("File received:", file.name, file.type, file.size);
     
-    // Create a unique filename
-    const timestamp = Date.now();
-    const safeFilename = file.name?.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '') || 'image.jpg';
-    const filename = `${timestamp}-${safeFilename}`;
-    
     try {
-      // Get file data
+      // Create a unique filename for reference
+      const timestamp = Date.now();
+      const safeFilename = file.name?.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '') || 'image.jpg';
+      
+      // Convert file to base64 data URL
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
       
-      // Define paths
-      const publicDir = path.join(process.cwd(), "public");
-      const uploadsDir = path.join(publicDir, "images", "uploads");
-      
-      // Create directories if they don't exist
-      if (!fs.existsSync(publicDir)) {
-        fs.mkdirSync(publicDir, { recursive: true });
-      }
-      
-      if (!fs.existsSync(uploadsDir)) {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-      }
-      
-      // Save file
-      const filepath = path.join(uploadsDir, filename);
-      fs.writeFileSync(filepath, buffer);
-      
-      console.log(`File saved at: ${filepath}`);
-      
-      // Return the URL
+      // Return the data URL directly
       return NextResponse.json({ 
         success: true,
-        url: `/images/uploads/${filename}`
+        url: dataUrl,
+        filename: `${timestamp}-${safeFilename}`
       });
     } catch (error: any) {
-      console.error("File system error:", error);
+      console.error("Data processing error:", error);
       return NextResponse.json({ 
-        error: "Server file system error" 
+        error: "Failed to process image data" 
       }, { status: 500 });
     }
   } catch (error: any) {

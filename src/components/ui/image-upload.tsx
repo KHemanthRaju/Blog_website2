@@ -23,67 +23,36 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       return;
     }
 
-    // Check file size (limit to 1MB)
-    if (file.size > 1 * 1024 * 1024) {
-      setError("File size exceeds 1MB limit");
+    // Check file size (limit to 800KB)
+    if (file.size > 800 * 1024) {
+      setError("File size exceeds 800KB limit");
       return;
     }
 
     setIsUploading(true);
     setError(null);
 
-    // Create local preview
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      console.log("Uploading file:", file.name, file.type, file.size);
-
-      // Set timeout for fetch to prevent hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-        signal: controller.signal,
-      }).finally(() => clearTimeout(timeoutId));
-
-      const responseText = await response.text();
-      console.log("Server response:", responseText);
+      // Create data URL directly in the browser
+      const reader = new FileReader();
       
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        throw new Error("Invalid server response");
-      }
+      const dataUrlPromise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
       
-      if (!data.url) {
-        throw new Error("No URL returned from server");
-      }
-
-      console.log("Upload successful, URL:", data.url);
-      onChange(data.url);
+      // Get data URL
+      const dataUrl = await dataUrlPromise;
       
-      // Use the returned URL directly
-      URL.revokeObjectURL(localPreview); // Clean up the blob URL
-      setPreviewUrl(data.url);
+      // Use the data URL directly
+      console.log("Image converted to data URL");
+      onChange(dataUrl);
+      setPreviewUrl(dataUrl);
+      
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setError("Upload timed out. Please try again with a smaller image.");
-      } else {
-        setError(err.message || "Error uploading image. Please try again.");
-      }
-      console.error("Upload error:", err);
-      // Keep the local preview but don't set it as the value
+      setError(err.message || "Error processing image. Please try again.");
+      console.error("Image processing error:", err);
     } finally {
       setIsUploading(false);
     }
@@ -104,7 +73,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
           onClick={() => document.getElementById("image-upload")?.click()}
           disabled={isUploading}
         >
-          {isUploading ? "Uploading..." : "Upload Image"}
+          {isUploading ? "Processing..." : "Upload Image"}
         </Button>
         <input
           id="image-upload"
@@ -114,9 +83,9 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
           onChange={handleUpload}
           disabled={isUploading}
         />
-        {value && (
-          <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-            {value.includes("/") ? value.split("/").pop() : value}
+        {value && value.length > 30 && (
+          <span className="text-sm text-muted-foreground">
+            Image selected
           </span>
         )}
       </div>
